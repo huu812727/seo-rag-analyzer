@@ -11,7 +11,7 @@ load_dotenv()
 
 st.set_page_config(page_title="SEO Анализатор Конкурентов", layout="wide")
 
-st.title("SEO Анализатор Конкурентов (RAG)")
+st.title("🚀 SEO Анализатор Конкурентов (RAG)")
 st.markdown("""
 Этот инструмент анализирует ТОП-10 выдачи поисковых систем по вашему запросу, 
 извлекает лучшие практики конкурентов и формирует экспертный SEO-отчет с помощью ИИ.
@@ -25,17 +25,18 @@ def clear_all_data():
     """Cleans up local data folder and Pinecone index."""
     st.write("🧹 Очистка старых данных...")
     
-    # 1. Local cleanup
+    # 1. Local cleanup (и гарантия того, что папка существует)
     data_dir = "data"
-    if os.path.exists(data_dir):
-        files = glob.glob(os.path.join(data_dir, "*.md"))
-        for f in files:
-            try:
-                os.remove(f)
-            except Exception as e:
-                st.error(f"Не удалось удалить файл {f}: {e}")
+    os.makedirs(data_dir, exist_ok=True) # Создаем папку, если ее нет
     
-    # 2. Pinecone cleanup
+    files = glob.glob(os.path.join(data_dir, "*.md"))
+    for f in files:
+        try:
+            os.remove(f)
+        except Exception as e:
+            st.error(f"Не удалось удалить файл {f}: {e}")
+            
+    # 2. Pinecone cleanup с защитой от пустой базы
     pinecone_api_key = os.getenv("PINECONE_API_KEY")
     if pinecone_api_key:
         try:
@@ -46,9 +47,12 @@ def clear_all_data():
                 index.delete(delete_all=True)
                 st.write("✨ Индекс Pinecone очищен.")
         except Exception as e:
-            st.error(f"Ошибка при очистке Pinecone: {e}")
-    
-    st.write("✅ База данных очищена. Начинаем свежий анализ...")
+            if "404" in str(e) or "Namespace not found" in str(e):
+                st.write("✅ База уже пуста, очистка не требуется.")
+            else:
+                st.error(f"Ошибка при очистке Pinecone: {e}")
+                
+    st.write("✅ Подготовка завершена. Начинаем свежий анализ...")
 
 if st.sidebar.button("Запустить анализ"):
     if not query:
@@ -88,7 +92,7 @@ if st.sidebar.button("Запустить анализ"):
             if os.path.exists(final_report_path):
                 with open(final_report_path, "r", encoding="utf-8") as f:
                     report_content = f.read()
-                
+                    
                 st.divider()
                 st.markdown("### 📄 Финальный SEO-отчет")
                 st.markdown(report_content)
@@ -100,7 +104,7 @@ if st.sidebar.button("Запустить анализ"):
                     mime="text/markdown"
                 )
             else:
-                st.error("Ошибка: файл финального отчета не найден.")
+                st.error("Ошибка: файл финального отчета не найден. Проверьте логи скрипта translator.py.")
                 
         except Exception as e:
             st.error(f"Произошла ошибка в процессе выполнения: {e}")
