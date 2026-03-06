@@ -1,8 +1,7 @@
 import os
 from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI # Обновленный импорт
 from langchain_pinecone import Pinecone as PineconeVectorStore
-from langchain_openai import ChatOpenAI
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
@@ -25,10 +24,16 @@ def main():
         print("Error: Required API keys not found in .env file.")
         return
 
-    # 2. Initialize Embeddings and Vector Store
+    # 2. Initialize Embeddings and Vector Store (Синхронизировано с vectorize.py)
     index_name = "seo-analysis"
     print(f"Connecting to Pinecone index '{index_name}'...")
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    
+    # Теперь мы используем ту же модель, что и при сохранении векторов
+    embeddings = OpenAIEmbeddings(
+        model="openai/text-embedding-3-small",
+        openai_api_key=openrouter_api_key,
+        openai_api_base="https://openrouter.ai/api/v1"
+    )
     
     vector_store = PineconeVectorStore(
         index_name=index_name,
@@ -67,32 +72,4 @@ def main():
     # Combined documents chain
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     
-    # Retriever (increased k for more context)
-    retriever = vector_store.as_retriever(search_kwargs={"k": 40})
-    
-    # Retrieval chain
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-
-    # 5. Execute test query
-    query = "Analyze the competitor base and create a detailed expert report according to your instructions."
-    print(f"Executing query: '{query}'...")
-    
-    try:
-        response = rag_chain.invoke({"input": query})
-        answer = response["answer"]
-        
-        # 6. Save raw report
-        os.makedirs("data", exist_ok=True)
-        with open("data/raw_report.md", "w", encoding="utf-8") as f:
-            f.write(answer)
-        print("Raw report saved to 'data/raw_report.md'.")
-        
-        # 7. Output result
-        print("\n=== RAW ANALYSIS RESULT (ENGLISH) ===\n")
-        print(answer)
-        
-    except Exception as e:
-        print(f"Error during analysis: {e}")
-
-if __name__ == "__main__":
-    main()
+    #
