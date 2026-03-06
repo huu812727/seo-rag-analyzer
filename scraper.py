@@ -44,24 +44,15 @@ def validate_and_save(url, markdown_content, index, data_dir):
     """Checks content quality and saves if valid."""
     if not markdown_content:
         return False
-
-    # Validation criteria
-    text_lower = markdown_content.lower()
-    stop_phrases = [
-        '404 error', 'access denied', 'just a moment', 
-        'cloudflare', 'captcha', 'page not found'
-    ]
     
     # 1. Length check (> 1000 symbols)
     if len(markdown_content) <= 1000:
-        print(f"URL [{url}] skipped: failed quality check (too short)")
+        print(f"URL [{url}] skipped: failed quality check (too short - likely a stub or error page)")
         return False
 
-    # 2. Stop-phrases check
-    if any(phrase in text_lower for phrase in stop_phrases):
-        print(f"URL [{url}] skipped: failed quality check (stop-phrases found)")
-        return False
-
+    # 2. Проверка по стоп-словам ОТКЛЮЧЕНА, так как блокировала полезные сайты
+    # из-за упоминания слов 'captcha' или 'cloudflare' в политике конфиденциальности.
+    
     # Save to file
     filename = f"competitor_{index}.md"
     filepath = os.path.join(data_dir, filename)
