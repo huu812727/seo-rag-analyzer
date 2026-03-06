@@ -1,7 +1,9 @@
-import streamlit as st
-import subprocess
-import os
 import sys
+import glob
+from pinecone import Pinecone
+from dotenv import load_dotenv
+
+load_dotenv()
 
 st.set_page_config(page_title="SEO Анализатор Конкурентов", page_icon="🚀", layout="wide")
 
@@ -15,12 +17,44 @@ st.sidebar.header("Настройки")
 query = st.sidebar.text_input("Ключевой запрос:", placeholder="Например: SEO продвижение 2026")
 num_competitors = st.sidebar.slider("Количество конкурентов:", 1, 10, 5)
 
+def clear_all_data():
+    """Cleans up local data folder and Pinecone index."""
+    st.write("🧹 Очистка старых данных...")
+    
+    # 1. Local cleanup
+    data_dir = "data"
+    if os.path.exists(data_dir):
+        files = glob.glob(os.path.join(data_dir, "*.md"))
+        for f in files:
+            try:
+                os.remove(f)
+            except Exception as e:
+                st.error(f"Не удалось удалить файл {f}: {e}")
+    
+    # 2. Pinecone cleanup
+    pinecone_api_key = os.getenv("PINECONE_API_KEY")
+    if pinecone_api_key:
+        try:
+            pc = Pinecone(api_key=pinecone_api_key)
+            index_name = "seo-analysis"
+            if index_name in [idx.name for idx in pc.list_indexes()]:
+                index = pc.Index(index_name)
+                index.delete(delete_all=True)
+                st.write("✨ Индекс Pinecone очищен.")
+        except Exception as e:
+            st.error(f"Ошибка при очистке Pinecone: {e}")
+    
+    st.write("✅ База данных очищена. Начинаем свежий анализ...")
+
 if st.sidebar.button("Запустить анализ"):
     if not query:
         st.error("Пожалуйста, введите запрос!")
     else:
         try:
             with st.status("Процесс анализа запущен...", expanded=True) as status_bar:
+                # Шаг 0: Очистка
+                clear_all_data()
+                
                 # Вспомогательная функция для запуска скриптов с захватом ошибок
                 def run_step(script, args, step_name):
                     status_bar.write(step_name)
