@@ -1,9 +1,9 @@
-langchain
-langchain-openai
+streamlit
 firecrawl-py
-pinecone-client
-python-dotenv
-sentence-transformers
-streamlit
 google-search-results
-streamlit
+pinecone-client
+langchain
+langchain-community
+langchain-openai
+sentence-transformers
+python-dotenv
