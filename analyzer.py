@@ -51,7 +51,7 @@ def main():
 
     # 4. Setup RAG Chain
     system_prompt = (
-        "You are a Senior SEO Analyst. Analyze the provided competitor content from TOP-10 search results and create a detailed report. "
+        "You are a Senior SEO Analyst. Analyze the provided competitor content from provided search results and create a detailed report. "
         "The report must be in English and follow this structure (use Markdown):\n\n"
         "1. Executive Summary: Why are they in the TOP? Describe the dominant pattern and average technical weight of the pages.\n\n"
         "2. Content Skeleton (The Perfect Blueprint): Propose the ideal H1. Break down the H2-H3 structure justified by competitor frequency. List unique blocks of leaders.\n\n"
