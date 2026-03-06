@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import sys
 import glob
 from pinecone import Pinecone
