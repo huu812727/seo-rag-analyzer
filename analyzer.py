@@ -73,3 +73,5 @@ def main():
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     
     #
+if __name__ == "__main__":
+    main()
