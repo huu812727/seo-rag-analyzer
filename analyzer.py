@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI # Обновленный импорт
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import Pinecone as PineconeVectorStore
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -17,6 +17,7 @@ if sys.platform == "win32":
 load_dotenv()
 
 def main():
+    print("🚀 Запуск analyzer.py...")
     pinecone_api_key = os.getenv("PINECONE_API_KEY")
     openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
     
@@ -24,11 +25,11 @@ def main():
         print("Error: Required API keys not found in .env file.")
         return
 
-    # 2. Initialize Embeddings and Vector Store (Синхронизировано с vectorize.py)
+    # 2. Initialize Embeddings and Vector Store
     index_name = "seo-analysis"
     print(f"Connecting to Pinecone index '{index_name}'...")
     
-    # Теперь мы используем ту же модель, что и при сохранении векторов
+    # === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Синхронизируем размерность с Pinecone (1536) ===
     embeddings = OpenAIEmbeddings(
         model="openai/text-embedding-3-small",
         openai_api_key=openrouter_api_key,
@@ -40,7 +41,7 @@ def main():
         embedding=embeddings
     )
 
-    # 3. Initialize LLM (OpenRouter)
+    # 3. Initialize LLM (OpenRouter) - Твоя верная модель
     print("Initializing LLM via OpenRouter (Gemini 3 Flash Preview)...")
     llm = ChatOpenAI(
         base_url="https://openrouter.ai/api/v1",
@@ -49,7 +50,6 @@ def main():
     )
 
     # 4. Setup RAG Chain
-    # System Prompt (Senior SEO Version - English)
     system_prompt = (
         "You are a Senior SEO Analyst. Analyze the provided competitor content from TOP-10 search results and create a detailed report. "
         "The report must be in English and follow this structure (use Markdown):\n\n"
@@ -70,8 +70,35 @@ def main():
     )
 
     # Combined documents chain
+    print("🔗 Сборка RAG-цепочки...")
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     
-    #
+    # Retriever
+    retriever = vector_store.as_retriever(search_kwargs={"k": 20})
+    
+    # Retrieval chain
+    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+    # 5. Execute test query
+    query = "Analyze the competitor base and create a detailed expert report according to your instructions."
+    print(f"Executing query: '{query}'...")
+    
+    try:
+        response = rag_chain.invoke({"input": query})
+        answer = response["answer"]
+        
+        # 6. Save raw report
+        os.makedirs("data", exist_ok=True)
+        with open("data/raw_report.md", "w", encoding="utf-8") as f:
+            f.write(answer)
+        print("Raw report saved to 'data/raw_report.md'.")
+        
+        # 7. Output result
+        print("\n=== RAW ANALYSIS RESULT (ENGLISH) ===\n")
+        print(answer)
+        
+    except Exception as e:
+        print(f"Error during analysis: {e}")
+
 if __name__ == "__main__":
     main()
