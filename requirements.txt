@@ -5,3 +5,5 @@ pinecone-client
 python-dotenv
 sentence-transformers
 streamlit
+google-search-results
+streamlit
