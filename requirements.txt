@@ -5,5 +5,7 @@ pinecone-client
 langchain
 langchain-community
 langchain-openai
+langchain-huggingface
 sentence-transformers
 python-dotenv
+tiktoken
