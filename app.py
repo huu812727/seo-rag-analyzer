@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import sys
 import glob
+import subprocess
+import shutil
 from pinecone import Pinecone
 from dotenv import load_dotenv
 
