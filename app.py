@@ -63,14 +63,23 @@ if st.sidebar.button("Запустить анализ"):
                 # Шаг 0: Очистка
                 clear_all_data()
                 
-                # Вспомогательная функция для запуска скриптов с захватом ошибок
+                # Умная функция с выводом логов
                 def run_step(script, args, step_name):
                     status_bar.write(step_name)
                     cmd = [sys.executable, script] + args
                     result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
-                    if result.returncode != 0:
-                        st.error(f"Ошибка в {script}:\n{result.stderr}")
-                        raise Exception(f"Step {script} failed")
+                    
+                    # ВЫВОДИМ ЛОГИ ПРЯМО В ИНТЕРФЕЙС
+                    with status_bar.expander(f"Логи: {script}", expanded=False):
+                        if result.stdout:
+                            st.code(result.stdout, language="text")
+                        if result.stderr:
+                            st.error(result.stderr)
+                            
+                    # ЖЕСТКАЯ ПРОВЕРКА: ловим тихие ошибки
+                    if result.returncode != 0 or "Error" in result.stdout or "Exception" in result.stdout:
+                        st.error(f"Скрытая ошибка в {script}! Раскройте спойлер 'Логи' выше, чтобы увидеть причину.")
+                        raise Exception(f"Step {script} failed silently")
                     return result
 
                 # Шаг 1: Scraper
@@ -107,7 +116,7 @@ if st.sidebar.button("Запустить анализ"):
                 st.error("Ошибка: файл финального отчета не найден. Проверьте логи скрипта translator.py.")
                 
         except Exception as e:
-            st.error(f"Произошла ошибка в процессе выполнения: {e}")
+            st.error(f"Анализ остановлен.")
 
 else:
     st.info("Введите запрос в боковой панели и нажмите 'Запустить анализ', чтобы начать.")
