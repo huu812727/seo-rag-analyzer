@@ -1,0 +1,7 @@
+langchain
+langchain-openai
+firecrawl-py
+pinecone-client
+python-dotenv
+sentence-transformers
+streamlit
