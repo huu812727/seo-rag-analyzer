@@ -1,13 +1,10 @@
 import os
-from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_pinecone import Pinecone as PineconeVectorStore
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-
 import sys
 import io
+from dotenv import load_dotenv
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_pinecone import PineconeVectorStore # Исправленный импорт (уберет Warning)
+from langchain_core.prompts import ChatPromptTemplate
 
 # 0. Fix encoding for Windows console
 if sys.platform == "win32":
@@ -29,7 +26,6 @@ def main():
     index_name = "seo-analysis"
     print(f"Connecting to Pinecone index '{index_name}'...")
     
-    # === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Синхронизируем размерность с Pinecone (1536) ===
     embeddings = OpenAIEmbeddings(
         model="openai/text-embedding-3-small",
         openai_api_key=openrouter_api_key,
@@ -41,7 +37,7 @@ def main():
         embedding=embeddings
     )
 
-    # 3. Initialize LLM (OpenRouter) - Твоя верная модель
+    # 3. Initialize LLM (OpenRouter)
     print("Initializing LLM via OpenRouter (Gemini 3 Flash Preview)...")
     llm = ChatOpenAI(
         base_url="https://openrouter.ai/api/v1",
@@ -69,25 +65,19 @@ def main():
         ]
     )
 
-    # === НОВАЯ ЛОГИКА: Ручная сборка контекста с метаданными ===
+    # === Ручная сборка контекста с метаданными ===
     print("🔍 Извлечение данных из Pinecone (MMR)...")
     
-    # 1. Настраиваем ретривер (с твоими правками MMR)
     retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 20, "fetch_k": 50})
-    
-    # Твой новый, правильный запрос для поиска в БД
     search_query = "SEO structure, H1, H2, H3 headings, pricing, commercial factors, delivery, product features, reviews"
     
-    # 2. Получаем сырые документы из базы (без участия LLM)
     docs = retriever.invoke(search_query)
     
     print("🛠 Формирование обогащенного контекста...")
-    # 3. Собираем контекст руками, добавляя заголовки к тексту
     formatted_context = ""
     for i, doc in enumerate(docs):
         formatted_context += f"\n--- Фрагмент {i+1} ---\n"
         
-        # Безопасно проверяем наличие ключей в словаре metadata
         if "source" in doc.metadata:
             formatted_context += f"Источник: {doc.metadata['source']}\n"
         if "Header 1" in doc.metadata:
@@ -99,48 +89,25 @@ def main():
             
         formatted_context += f"Текст: {doc.page_content}\n"
 
-    # 4. Собираем LCEL-цепочку (LangChain Expression Language)
     print("🧠 Генерация SEO-отчета через LLM...")
     
-    # Мы передаем prompt напрямую в llm (prompt | llm)
     chain = prompt | llm
     
     try:
-        # Передаем наш собранный контекст и изначальную задачу для LLM
-        # Заметь: input - это команда для LLM, а search_query был командой для базы данных
         llm_task = "Analyze the competitor base and create a detailed expert report according to your instructions."
         response = chain.invoke({
             "context": formatted_context, 
             "input": llm_task
         })
         
-        # В новом синтаксисе результат лежит в .content
         answer = response.content 
         
-        # 6. Save raw report
         os.makedirs("data", exist_ok=True)
         with open("data/raw_report.md", "w", encoding="utf-8") as f:
             f.write(answer)
         print("Raw report saved to 'data/raw_report.md'.")
         
         print("\n=== RAW ANALYSIS RESULT ===\n")
-        print(answer)
-        
-    except Exception as e:
-        print(f"Error during analysis: {e}")
-    
-    try:
-        response = rag_chain.invoke({"input": query})
-        answer = response["answer"]
-        
-        # 6. Save raw report
-        os.makedirs("data", exist_ok=True)
-        with open("data/raw_report.md", "w", encoding="utf-8") as f:
-            f.write(answer)
-        print("Raw report saved to 'data/raw_report.md'.")
-        
-        # 7. Output result
-        print("\n=== RAW ANALYSIS RESULT (ENGLISH) ===\n")
         print(answer)
         
     except Exception as e:
