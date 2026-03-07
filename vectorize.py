@@ -30,9 +30,32 @@ def main():
     documents = loader.load()
     
     # 3. Split text
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    all_splits = text_splitter.split_documents(documents)
-    print(f"Split into {len(all_splits)} chunks.")
+    from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+
+# 1. Настраиваем правила: за какими заголовками следить
+headers_to_split_on = [
+    ("#", "Header 1"),
+    ("##", "Header 2"),
+    ("###", "Header 3"),
+]
+markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+
+# 2. Достаем сырой текст из первого документа, который вернул парсер
+# (Предполагаем, что документы лежат в переменной documents)
+raw_text = documents[0].page_content
+
+# 3. Режем текст по заголовкам Markdown
+md_header_splits = markdown_splitter.split_text(raw_text)
+
+# 4. Страхуемся от слишком длинных кусков обычным сплиттером
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+all_splits = text_splitter.split_documents(md_header_splits)
+
+# 5. Проверяем, что получилось (печатаем 5-й кусок)
+print(f"Всего получилось {len(all_splits)} чанков.")
+print("--- Пример чанка ---")
+print("Текст:", all_splits[5].page_content)
+print("Метаданные (заголовки):", all_splits[5].metadata)
 
     # 4. Initialize OpenRouter Embeddings
     # Мы используем класс OpenAIEmbeddings, но перенаправляем его на OpenRouter
