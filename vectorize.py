@@ -2,8 +2,8 @@ import os
 import time
 from dotenv import load_dotenv
 from langchain_community.document_loaders import TextLoader, DirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings # Используем OpenAI-совместимый класс
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import Pinecone as PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 
@@ -29,44 +29,48 @@ def main():
     loader = DirectoryLoader(data_dir, glob="**/*.md", loader_cls=TextLoader, loader_kwargs={'encoding': 'utf-8'})
     documents = loader.load()
     
+    if not documents:
+        print("Error: No markdown files found in the data directory.")
+        return
+    
     # 3. Split text
-    from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+    # Настраиваем правила: за какими заголовками следить
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
-# 1. Настраиваем правила: за какими заголовками следить
-headers_to_split_on = [
-    ("#", "Header 1"),
-    ("##", "Header 2"),
-    ("###", "Header 3"),
-]
-markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    # Запускаем цикл по всем загруженным файлам
+    all_splits = []
+    for doc in documents:
+        # Режем текущий документ по заголовкам
+        md_header_splits = markdown_splitter.split_text(doc.page_content)
+        
+        # Сохраняем исходные метаданные (например, имя файла), чтобы они не потерялись
+        for split in md_header_splits:
+            split.metadata.update(doc.metadata)
+            
+        # Страхуемся от длинных кусков
+        splits = text_splitter.split_documents(md_header_splits)
+        all_splits.extend(splits) # Добавляем в общий список
 
-# 2. Достаем сырой текст из первого документа, который вернул парсер
-# (Предполагаем, что документы лежат в переменной documents)
-raw_text = documents[0].page_content
-
-# 3. Режем текст по заголовкам Markdown
-md_header_splits = markdown_splitter.split_text(raw_text)
-
-# 4. Страхуемся от слишком длинных кусков обычным сплиттером
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-all_splits = text_splitter.split_documents(md_header_splits)
-
-# 5. Проверяем, что получилось (печатаем 5-й кусок)
-print(f"Всего получилось {len(all_splits)} чанков.")
-print("--- Пример чанка ---")
-print("Текст:", all_splits[5].page_content)
-print("Метаданные (заголовки):", all_splits[5].metadata)
+    print(f"Всего получилось {len(all_splits)} чанков.")
+    if all_splits:
+        print("--- Пример чанка ---")
+        print("Метаданные (заголовки):", all_splits[0].metadata)
 
     # 4. Initialize OpenRouter Embeddings
-    # Мы используем класс OpenAIEmbeddings, но перенаправляем его на OpenRouter
-embeddings = OpenAIEmbeddings(
+    embeddings = OpenAIEmbeddings(
         model="openai/text-embedding-3-small",
         openai_api_key=api_key,
         openai_api_base="https://openrouter.ai/api/v1"
     )
 
     # 5. Initialize Pinecone
-pc = Pinecone(api_key=pinecone_api_key)
+    pc = Pinecone(api_key=pinecone_api_key)
     index_name = "seo-analysis"
     dimension = 1536 # Размерность для text-embedding-3-small
 
