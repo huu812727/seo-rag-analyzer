@@ -66,7 +66,7 @@ embeddings = OpenAIEmbeddings(
     )
 
     # 5. Initialize Pinecone
-    pc = Pinecone(api_key=pinecone_api_key)
+pc = Pinecone(api_key=pinecone_api_key)
     index_name = "seo-analysis"
     dimension = 1536 # Размерность для text-embedding-3-small
 
