@@ -74,13 +74,13 @@ def main():
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     
     # Retriever
-    retriever = vector_store.as_retriever(search_kwargs={"k": 20})
+    retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 20, "fetch_k": 50})
     
     # Retrieval chain
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
     # 5. Execute test query
-    query = "Analyze the competitor base and create a detailed expert report according to your instructions."
+    query = "SEO structure, H1, H2, H3 headings, pricing, commercial factors, delivery, product features, reviews"
     print(f"Executing query: '{query}'...")
     
     try:
