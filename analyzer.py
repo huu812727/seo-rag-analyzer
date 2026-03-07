@@ -69,19 +69,65 @@ def main():
         ]
     )
 
-    # Combined documents chain
-    print("🔗 Сборка RAG-цепочки...")
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
+    # === НОВАЯ ЛОГИКА: Ручная сборка контекста с метаданными ===
+    print("🔍 Извлечение данных из Pinecone (MMR)...")
     
-    # Retriever
+    # 1. Настраиваем ретривер (с твоими правками MMR)
     retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 20, "fetch_k": 50})
     
-    # Retrieval chain
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    # Твой новый, правильный запрос для поиска в БД
+    search_query = "SEO structure, H1, H2, H3 headings, pricing, commercial factors, delivery, product features, reviews"
+    
+    # 2. Получаем сырые документы из базы (без участия LLM)
+    docs = retriever.invoke(search_query)
+    
+    print("🛠 Формирование обогащенного контекста...")
+    # 3. Собираем контекст руками, добавляя заголовки к тексту
+    formatted_context = ""
+    for i, doc in enumerate(docs):
+        formatted_context += f"\n--- Фрагмент {i+1} ---\n"
+        
+        # Безопасно проверяем наличие ключей в словаре metadata
+        if "source" in doc.metadata:
+            formatted_context += f"Источник: {doc.metadata['source']}\n"
+        if "Header 1" in doc.metadata:
+            formatted_context += f"H1: {doc.metadata['Header 1']}\n"
+        if "Header 2" in doc.metadata:
+            formatted_context += f"H2: {doc.metadata['Header 2']}\n"
+        if "Header 3" in doc.metadata:
+            formatted_context += f"H3: {doc.metadata['Header 3']}\n"
+            
+        formatted_context += f"Текст: {doc.page_content}\n"
 
-    # 5. Execute test query
-    query = "SEO structure, H1, H2, H3 headings, pricing, commercial factors, delivery, product features, reviews"
-    print(f"Executing query: '{query}'...")
+    # 4. Собираем LCEL-цепочку (LangChain Expression Language)
+    print("🧠 Генерация SEO-отчета через LLM...")
+    
+    # Мы передаем prompt напрямую в llm (prompt | llm)
+    chain = prompt | llm
+    
+    try:
+        # Передаем наш собранный контекст и изначальную задачу для LLM
+        # Заметь: input - это команда для LLM, а search_query был командой для базы данных
+        llm_task = "Analyze the competitor base and create a detailed expert report according to your instructions."
+        response = chain.invoke({
+            "context": formatted_context, 
+            "input": llm_task
+        })
+        
+        # В новом синтаксисе результат лежит в .content
+        answer = response.content 
+        
+        # 6. Save raw report
+        os.makedirs("data", exist_ok=True)
+        with open("data/raw_report.md", "w", encoding="utf-8") as f:
+            f.write(answer)
+        print("Raw report saved to 'data/raw_report.md'.")
+        
+        print("\n=== RAW ANALYSIS RESULT ===\n")
+        print(answer)
+        
+    except Exception as e:
+        print(f"Error during analysis: {e}")
     
     try:
         response = rag_chain.invoke({"input": query})
