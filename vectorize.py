@@ -59,7 +59,7 @@ print("Метаданные (заголовки):", all_splits[5].metadata)
 
     # 4. Initialize OpenRouter Embeddings
     # Мы используем класс OpenAIEmbeddings, но перенаправляем его на OpenRouter
-    embeddings = OpenAIEmbeddings(
+    embeddings=OpenAIEmbeddings(
         model="openai/text-embedding-3-small",
         openai_api_key=api_key,
         openai_api_base="https://openrouter.ai/api/v1"
