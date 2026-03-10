@@ -63,7 +63,7 @@ if st.sidebar.button("Запустить анализ"):
                 # Шаг 0: Очистка
                 clear_all_data()
                 
-                # Умная функция с выводом логов
+              # Умная функция с выводом логов
                 def run_step(script, args, step_name):
                     status_bar.write(step_name)
                     cmd = [sys.executable, script] + args
@@ -76,8 +76,20 @@ if st.sidebar.button("Запустить анализ"):
                         if result.stderr:
                             st.error(result.stderr)
                             
-                    # ЖЕСТКАЯ ПРОВЕРКА: ловим тихие ошибки
-                    if result.returncode != 0 or "Error" in result.stdout or "Exception" in result.stdout:
+                    # ЖЕСТКАЯ ПРОВЕРКА: ловим тихие ошибки (с поправкой на парсер)
+                    is_fatal = False
+                    if result.returncode != 0:
+                        is_fatal = True
+                    elif script == "scraper.py":
+                        # Для парсера фатально только если он не скачал вообще ничего
+                        if "Successfully saved 0 documents" in result.stdout or "Error: FIRECRAWL_API_KEY" in result.stdout:
+                            is_fatal = True
+                    else:
+                        # Для остальных скриптов любое слово Error - это красный флаг
+                        if "Error" in result.stdout or "Exception" in result.stdout:
+                            is_fatal = True
+                            
+                    if is_fatal:
                         st.error(f"Скрытая ошибка в {script}! Раскройте спойлер 'Логи' выше, чтобы увидеть причину.")
                         raise Exception(f"Step {script} failed silently")
                     return result
