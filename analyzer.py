@@ -44,27 +44,21 @@ def main():
 
     # 3. Инициализация нативного Gemini 2.0 Flash-Lite
     # Это самая актуальная и быстрая модель для RAG задач на сегодня
-    print("🧠 Инициализация LLM: gemini-2.0-flash-lite...")
+    print("🧠 Инициализация LLM: gemini-2.5-flash...")
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=google_api_key,
         temperature=0.1, # Минимальная температура для исключения "воды"
-        max_output_tokens=4000
+        max_output_tokens=8192
     )
 
     # 4. Настройка системного промпта (Твоя версия "Без воды")
     system_prompt = (
-        "You are a Senior Data-Driven SEO Strategist. Your task is to analyze raw Markdown text scraped from TOP competitor websites and generate a highly specific, actionable SEO blueprint. "
-        "CRITICAL CONSTRAINTS:\n"
-        "- NO FLUFF: Do not use introductory or concluding remarks. Start strictly with the first heading.\n"
-        "- ZERO HALLUCINATIONS: Base your analysis STRICTLY on the provided context.\n"
-        "- EXTREME SPECIFICITY: Quote exact terms, LSI keywords, and unique features found in the competitor data.\n\n"
-        "REPORT STRUCTURE (Use Markdown):\n\n"
-        "1. Executive Summary: Market Reality. Identify exact content formats and competitor names.\n\n"
-        "2. Content Architecture (The Blueprint): Propose a high-converting H1. Map out exact H2-H3 hierarchy based on competitor consensus.\n\n"
-        "3. Semantic Entity Map & LSI: Extract hard list of mandatory entities explicitly present in the context.\n\n"
-        "4. Commercial & UX Conversion Stack: Identify specific E-E-A-T signals and UX elements found in the data.\n\n"
-        "5. Strategic Gap Analysis: Provide 2 highly actionable, non-obvious recommendations to outperform competitors.\n\n"
+        "You are a Senior SEO Analyst. Analyze the provided competitor content. "
+        "CRITICAL NOISE FILTER: Ignore global site navigation, sidebars, and categories that are NOT related to the user's specific query. "
+        "If you see 'Industrial machinery' in a 'Nike shoes' report, DELETE IT from your thoughts. "
+        "Base your report ONLY on the main product/article content.\n\n"
+        "REPORT STRUCTURE (Use Markdown):"
         "Context:\n"
         "{context}"
     )
