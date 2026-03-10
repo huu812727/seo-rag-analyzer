@@ -7,10 +7,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.prompts import ChatPromptTemplate
 
+# Загрузка переменных окружения
 load_dotenv()
 
 def main():
-    # Добавляем аргумент --query, чтобы знать, что искать в базе
     parser = argparse.ArgumentParser()
     parser.add_argument("--query", type=str, required=True)
     args = parser.parse_args()
@@ -19,6 +19,10 @@ def main():
     
     google_api_key = os.getenv("GOOGLE_API_KEY")
     openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+
+    if not google_api_key or not openrouter_api_key:
+        print("❌ ОШИБКА: Проверьте API ключи в окружении!")
+        return
 
     # 1. Подключение к вектору
     embeddings = OpenAIEmbeddings(
@@ -29,17 +33,16 @@ def main():
     
     vector_store = PineconeVectorStore(index_name="seo-analysis", embedding=embeddings)
 
-    # 2. Инициализация LLM (Gemini 3.1 Flash Lite)
-    # Используем ID, который точно должен быть в v1beta
+    # 2. Инициализация LLM (Стабильный Gemini 1.5 Flash)
+    print(f"🧠 Использование модели: gemini-1.5-flash")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.1-flash-lite-preview", 
+        model="gemini-1.5-flash", 
         google_api_key=google_api_key,
         temperature=0.1,
         max_output_tokens=8192
     )
 
-    # 3. УМНЫЙ ПОИСК КОНТЕКСТА
-    # Теперь мы ищем в Pinecone не по шаблону, а по ТВОЕМУ запросу
+    # 3. Поиск контекста в базе
     print(f"🔍 Ищу фрагменты в базе по теме: {args.query}...")
     retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 15})
     docs = retriever.invoke(args.query)
@@ -54,7 +57,7 @@ def main():
     for i, doc in enumerate(docs):
         formatted_context += f"\n--- Фрагмент {i+1} ---\n{doc.page_content}\n"
 
-   # 4. АГРЕССИВНЫЙ ПРОМПТ ДЛЯ ТОЧЕК РОСТА
+    # 4. Жесткий промпт (Фокус на 5 раздел)
     system_prompt = (
         "You are a Senior SEO Critic. Your goal is NOT to describe competitors, but to find their WEAKNESSES. "
         "STRICT CONSTRAINTS:\n"
@@ -77,13 +80,12 @@ def main():
     
     chain = prompt | llm
     
-   try:
+    # 5. Генерация и сохранение с защитой от ошибок парсинга ответа
+    try:
         response = chain.invoke({"query": args.query, "context": formatted_context})
         
-        # --- БРОНЕБОЙНЫЙ ИЗВЛЕКАТЕЛЬ ТЕКСТА ---
+        # Бронебойный извлекатель текста
         answer = response.content
-        
-        # Если Gemini вернула список, собираем его в одну строку
         if isinstance(answer, list):
             text_parts = []
             for item in answer:
@@ -93,7 +95,6 @@ def main():
                     text_parts.append(str(item))
             answer = "".join(text_parts)
         else:
-            # Если это уже строка, просто страхуемся
             answer = str(answer)
 
         if not answer.strip():
@@ -102,9 +103,12 @@ def main():
 
         os.makedirs("data", exist_ok=True)
         with open("data/raw_report.md", "w", encoding="utf-8") as f:
-            f.write(answer) # Теперь сюда 100% попадет текст
+            f.write(answer)
             
         print("✅ Отчет успешно сохранен.")
         
     except Exception as e:
         print(f"❌ Ошибка LLM: {e}")
+
+if __name__ == "__main__":
+    main()
