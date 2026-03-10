@@ -6,5 +6,6 @@ langchain
 langchain-community
 langchain-openai
 langchain-pinecone
+langchain-google-genai
 python-dotenv
 tiktoken
