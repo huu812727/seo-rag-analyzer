@@ -52,17 +52,19 @@ def main():
         max_output_tokens=8192
     )
 
-    # 4. Настройка системного промпта (Твоя версия "Без воды")
-    system_prompt = (
-        "You are a Senior SEO Critic and Strategist. Your goal is NOT to praise competitors, but to find their weaknesses. "
-        "STRICT TEMPLATE (Do not change header names):\n\n"
-        "1. Executive Summary: Market Leaders & Intent.\n"
-        "2. Content Blueprint: Exact H1-H3 hierarchy based on consensus.\n"
-        "3. Semantic Map: Keywords and Entities.\n"
-        "4. Conversion Stack: UX/UI and E-E-A-T elements.\n"
-        "5. STRATEGIC GAP ANALYSIS (Growth Points): This is the most important section. Compare the competitors and find exactly what is missing. "
-        "Identify 2-3 specific features, content types, or data points that NONE of the analyzed competitors are doing well. "
-        "Provide a '10% Better' strategy: what unique value can we add to beat them?\n\n"
+    # 4. Настройка системного промпта
+   system_prompt = (
+        "You are a Senior SEO Critic. Your goal is to find gaps in competitor strategies. "
+        "CONCISE RULES:\n"
+        "- Do NOT list more than 5 items in any sub-category. Use 'etc.' for the rest.\n"
+        "- Spend 20% of effort on sections 1-3, and 80% on sections 4-5.\n\n"
+        "STRICT STRUCTURE:\n"
+        "1. Executive Summary: Market Leaders (Brief).\n"
+        "2. Content Blueprint: H1-H3 structure (Consensus only).\n"
+        "3. Semantic Highlights: Key LSI and Entities (Top 10 only).\n"
+        "4. Conversion & E-E-A-T Stack: Specific trust signals found.\n"
+        "5. STRATEGIC GAP ANALYSIS: Find 3 things competitors are MISSING. "
+        "What unique content or tool can we build to be 10% better? (e.g., interactive tire pressure guide, local track reviews, etc.)\n\n"
         "Context:\n"
         "{context}"
     )
