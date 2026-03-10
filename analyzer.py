@@ -36,7 +36,7 @@ def main():
     # 2. Инициализация LLM (Стабильный Gemini 1.5 Flash)
     print(f"🧠 Использование модели: gemini-1.5-flash")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash", 
+        model="gemini-3.1-flash-lite-preview", 
         google_api_key=google_api_key,
         temperature=0.1,
         max_output_tokens=8192
