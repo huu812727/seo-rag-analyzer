@@ -108,27 +108,30 @@ if st.sidebar.button("Запустить анализ"):
                 
                 status_bar.update(label="✅ Анализ успешно завершен!", state="complete", expanded=False)
 
-            # Вывод результата
-            final_report_path = os.path.join("data", "final_report_ru.md")
-            if os.path.exists(final_report_path):
-                with open(final_report_path, "r", encoding="utf-8") as f:
-                    report_content = f.read()
-                    
-                st.divider()
-                st.markdown("### 📄 Финальный SEO-отчет")
-                st.markdown(report_content)
+           # Вывод результата
+        final_report_path = os.path.join("data", "final_report_ru.md")
+        
+        # ДОБАВЛЕНА ПРОВЕРКА РАЗМЕРА: os.path.getsize > 100 байт
+        if os.path.exists(final_report_path) and os.path.getsize(final_report_path) > 100:
+            with open(final_report_path, "r", encoding="utf-8") as f:
+                report_content = f.read()
                 
-                st.download_button(
-                    label="📥 Скачать отчет (.md)",
-                    data=report_content,
-                    file_name=f"seo_analysis_{query.replace(' ', '_')}.md",
-                    mime="text/markdown"
-                )
-            else:
-                st.error("Ошибка: файл финального отчета не найден. Проверьте логи скрипта translator.py.")
-                
-        except Exception as e:
-            st.error(f"Анализ остановлен.")
+            st.divider()
+            st.markdown("### 📄 Финальный SEO-отчет")
+            st.markdown(report_content)
+            
+            st.download_button(
+                label="📥 Скачать отчет (.md)",
+                data=report_content,
+                file_name=f"seo_analysis_{query.replace(' ', '_')}.md",
+                mime="text/markdown"
+            )
+        else:
+            # Если файла нет или он пустой
+            st.error("❌ Ошибка: Финальный отчет пуст. Проблема возникла на этапе генерации (analyzer.py) или перевода (translator.py).")
+            
+    except Exception as e:
+        st.error(f"Анализ остановлен: {e}")
 
 else:
     st.info("Введите запрос в боковой панели и нажмите 'Запустить анализ', чтобы начать.")
