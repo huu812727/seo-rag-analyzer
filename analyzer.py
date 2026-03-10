@@ -44,7 +44,7 @@ def main():
     # Выбрана за высокие лимиты и скорость
     print("🧠 Использование модели: gemini-3.1-flash-lite")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.1-flash-lite",
+        model="gemini-3.1-flash-lite-preview",
         google_api_key=google_api_key,
         temperature=0.1,
         max_output_tokens=8192
