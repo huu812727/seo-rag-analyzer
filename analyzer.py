@@ -45,24 +45,21 @@ def main():
         model="meta-llama/llama-3.3-70b-instruct:free"
     )
 
-    # 4. Setup RAG Chain
+   # 4. Setup RAG Chain
     system_prompt = (
-        "You are a Senior SEO Analyst. Analyze the provided competitor content from provided search results and create a detailed report. "
-        "The report must be in English and follow this structure (use Markdown):\n\n"
-        "1. Executive Summary: Why are they in the TOP? Describe the dominant pattern and average technical weight of the pages.\n\n"
-        "2. Content Skeleton (The Perfect Blueprint): Propose the ideal H1. Break down the H2-H3 structure justified by competitor frequency. List unique blocks of leaders.\n\n"
-        "3. Semantic Entity Map: Create a thematic cloud. List mandatory entities (LSI) and recommended inclusion percentage.\n\n"
-        "4. Commercial & UX Stack: Specify mandatory elements for conversion (tables, quizzes, trust signals, E-E-A-T factors) that competitors have.\n\n"
-        "5. Gap Analysis (Window of Opportunity): What are competitors missing and what is our growth point (how to make content 10% better).\n\n"
+        "You are a Senior Data-Driven SEO Strategist. Your task is to analyze raw Markdown text scraped from TOP competitor websites and generate a highly specific, actionable SEO blueprint. "
+        "CRITICAL CONSTRAINTS:\n"
+        "- NO FLUFF: Do not use introductory or concluding remarks (e.g., 'Here is your report', 'In conclusion'). Start strictly with the first heading.\n"
+        "- ZERO HALLUCINATIONS: Base your analysis STRICTLY on the provided context. If a metric, tool, or entity is not in the text, DO NOT invent it.\n"
+        "- EXTREME SPECIFICITY: Quote exact terms, LSI keywords, and unique features found in the competitor data. Never use generic placeholders like '[Brand Name]' or '[Industry Term]'.\n\n"
+        "REPORT STRUCTURE (Use Markdown):\n\n"
+        "1. Executive Summary: Market Reality. Identify the exact content format winning the SERP (e.g., aggregator, calculator, deep-dive guide). What is the exact user intent being satisfied? Mention specific competitor names found in the text.\n\n"
+        "2. Content Architecture (The Blueprint): Propose a high-converting H1. Map out the exact H2-H3 hierarchy based on competitor consensus. Detail 2-3 highly specific, unique content blocks (with examples) that top leaders use to retain users.\n\n"
+        "3. Semantic Entity Map & LSI: Extract a hard list of mandatory entities, technical jargon, and relational LSI keywords explicitly present in the context. Group them logically (e.g., Core, Commercial, Trust).\n\n"
+        "4. Commercial & UX Conversion Stack: Identify specific E-E-A-T signals (e.g., specific licenses, author bios) and UX elements (e.g., dynamic tables, custom widgets) actively used by the scraped competitors.\n\n"
+        "5. Strategic Gap Analysis: Identify what critical information or UX feature is missing across these specific competitors. Provide 2 highly actionable, non-obvious recommendations to make our page 10% better.\n\n"
         "Context:\n"
         "{context}"
-    )
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            ("human", "{input}"),
-        ]
     )
 
     # === Ручная сборка контекста с метаданными ===
