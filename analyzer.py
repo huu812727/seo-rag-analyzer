@@ -42,7 +42,7 @@ def main():
     llm = ChatOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=openrouter_api_key,
-        model="google/gemini-3-flash-preview"
+        model="meta-llama/llama-3.3-70b-instruct:free"
     )
 
     # 4. Setup RAG Chain
