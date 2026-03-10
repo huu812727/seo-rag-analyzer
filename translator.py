@@ -30,9 +30,8 @@ def main():
     with open(raw_report_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
 
-    # 3. Инициализация нативного Gemini 2.5
-    # Используем ту же модель, что и в анализаторе для консистентности и скорости
-    print("🧠 Инициализация Translator LLM: gemini-3.1-flash-lite...")
+    # 3. Инициализация нативного Gemini 3.1
+    print("🧠 Инициализация Translator LLM: gemini-3.1-flash-lite-preview...")
     llm = ChatGoogleGenerativeAI(
         model="gemini-3.1-flash-lite-preview",
         google_api_key=google_api_key,
@@ -41,7 +40,6 @@ def main():
     )
 
     # 4. Настройка промпта перевода
-    # Оставляем жесткие ограничения ZERO CHAT, чтобы файл не содержал мусора
     system_prompt = (
         "You are an expert IT and SEO localizer. Your ONLY task is to translate the provided English Markdown report into professional Russian. "
         "CRITICAL CONSTRAINTS:\n"
@@ -62,7 +60,23 @@ def main():
     print("⏳ Перевод отчета на русский язык...")
     try:
         response = chain.invoke({"report": raw_text})
-        translated_text = response.content
+        answer = response.content
+        
+        # --- БРОНЕБОЙНЫЙ ИЗВЛЕКАТЕЛЬ ТЕКСТА ---
+        if isinstance(answer, list):
+            text_parts = []
+            for item in answer:
+                if isinstance(item, dict) and "text" in item:
+                    text_parts.append(item["text"])
+                else:
+                    text_parts.append(str(item))
+            translated_text = "".join(text_parts)
+        else:
+            translated_text = str(answer)
+
+        if not translated_text.strip():
+            print("❌ ОШИБКА: Модель вернула пустой перевод!")
+            return
         
         # 6. Сохранение финального результата
         os.makedirs("data", exist_ok=True)
@@ -71,10 +85,6 @@ def main():
             f.write(translated_text)
             
         print(f"✅ Успех! Финальный отчет сохранен: '{final_report_path}'.")
-
-        # 7. Вывод результата в логи для контроля
-        print("\n=== FINAL RUSSIAN REPORT ===\n")
-        print(translated_text)
 
     except Exception as e:
         print(f"❌ Ошибка при переводе: {e}")
