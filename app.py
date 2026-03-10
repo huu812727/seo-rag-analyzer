@@ -101,7 +101,7 @@ if st.sidebar.button("Запустить анализ"):
                 run_step("vectorize.py", [], "🧠 [2/4] Создание векторов и загрузка в Pinecone...")
                 
                 # Шаг 3: Analyzer
-                run_step("analyzer.py", [], "🤖 [3/4] Генерация отчета нейросетью...")
+                run_step("analyzer.py", ["--query", query], "🤖 [3/4] Генерация отчета")
                 
                 # Шаг 4: Translator
                 run_step("translator.py", [], "🇷🇺 [4/4] Перевод отчета на русский язык...")
