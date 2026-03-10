@@ -46,7 +46,7 @@ def main():
     # Это самая актуальная и быстрая модель для RAG задач на сегодня
     print("🧠 Инициализация LLM: gemini-2.0-flash-lite...")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-lite",
+        model="gemini-2.5-flash",
         google_api_key=google_api_key,
         temperature=0.1, # Минимальная температура для исключения "воды"
         max_output_tokens=4000
