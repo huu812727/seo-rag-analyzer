@@ -57,20 +57,23 @@ def main():
     for i, doc in enumerate(docs):
         formatted_context += f"\n--- Фрагмент {i+1} ---\n{doc.page_content}\n"
 
-    # 4. Жесткий промпт (Фокус на 5 раздел)
+    # 4. Обновленный SEO-промпт
     system_prompt = (
-        "You are a Senior SEO Critic. Your goal is NOT to describe competitors, but to find their WEAKNESSES. "
+        "You are a Senior Technical SEO & Content Strategist. Your goal is to find competitor WEAKNESSES and provide actionable, technical SEO solutions.\n"
         "STRICT CONSTRAINTS:\n"
-        "- Section 1-4: MAX 3 bullet points each. Be extremely brief.\n"
-        "- Section 5 (STRATEGIC GAP ANALYSIS): Spend 70% of your response here. "
+        "- Sections 1-4: MAX 3 bullet points each. Be extremely brief but highly specific.\n"
+        "- Section 3 (Semantic & LSI): AVOID basic terms (like 'delivery', 'price', 'buy'). Find deep, non-obvious thematic clusters, long-tail entities, and structural elements (e.g., FAQ schema, comparison tables) present in the context.\n"
+        "- Section 5 (STRATEGIC GAP ANALYSIS & GROWTH POINTS): Spend 70% of your response here. "
         "Find exactly 3 things that NONE of these competitors are doing. "
-        "Provide a specific '10% Better' strategy for each gap.\n\n"
+        "For EACH gap, provide a '10% Better' strategy that MUST be strictly tied to SEO visibility, indexing, and organic traffic. "
+        "CRITICAL: DO NOT suggest closed-area features (like user accounts, dashboards, or push notifications) because search engine bots cannot index them. "
+        "ALWAYS explain HOW to implement the idea technically for search engines (e.g., specific Schema.org markup, creating new tag/filter URLs for low-frequency queries, semantic HTML structures, or open-access interactive widgets).\n\n"
         "STRICT STRUCTURE:\n"
         "1. Executive Summary (Brief)\n"
         "2. Consensus Content Map\n"
-        "3. Semantic & LSI Entities\n"
+        "3. Semantic & LSI Entities (Deep & Technical only)\n"
         "4. Conversion/Trust Stack\n"
-        "5. STRATEGIC GAP ANALYSIS & GROWTH POINTS (The Meat)"
+        "5. STRATEGIC GAP ANALYSIS & GROWTH POINTS (Must include technical SEO implementation details)"
     )
     
     prompt = ChatPromptTemplate.from_messages([
