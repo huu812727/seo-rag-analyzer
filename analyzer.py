@@ -2,29 +2,34 @@ import os
 import sys
 import io
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.prompts import ChatPromptTemplate
 
-# 0. Fix encoding for Windows console
+# 0. Фикс кодировки для корректного вывода в логах
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-# 1. Load environment variables
+# 1. Загрузка переменных окружения
 load_dotenv()
 
 def main():
-    print("🚀 Запуск analyzer.py...")
-    pinecone_api_key = os.getenv("PINECONE_API_KEY")
-    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    print("🚀 Запуск analyzer.py (Google Gemini Native Edition)...")
     
-    if not pinecone_api_key or not openrouter_api_key:
-        print("Error: Required API keys not found in .env file.")
+    # Получаем ключи
+    google_api_key = os.getenv("GOOGLE_API_KEY")
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY") # Нужен для эмбеддингов
+    pinecone_api_key = os.getenv("PINECONE_API_KEY")
+
+    if not google_api_key or not pinecone_api_key:
+        print("Error: Не найден GOOGLE_API_KEY или PINECONE_API_KEY!")
         return
 
-    # 2. Initialize Embeddings and Vector Store
+    # 2. Инициализация Vector Store
+    # Мы оставляем OpenAIEmbeddings, чтобы не пересоздавать индекс в Pinecone
     index_name = "seo-analysis"
-    print(f"Connecting to Pinecone index '{index_name}'...")
+    print(f"📡 Подключение к Pinecone index '{index_name}'...")
     
     embeddings = OpenAIEmbeddings(
         model="openai/text-embedding-3-small",
@@ -37,57 +42,52 @@ def main():
         embedding=embeddings
     )
 
-    # 3. Initialize LLM (OpenRouter)
-    print("Initializing LLM via OpenRouter (Llama 3.3 70B)...")
-    llm = ChatOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=openrouter_api_key,
-        model="meta-llama/llama-3.2-3b-instruct:free",
-        max_tokens=4000
+    # 3. Инициализация нативного Gemini 2.0 Flash-Lite
+    # Это самая актуальная и быстрая модель для RAG задач на сегодня
+    print("🧠 Инициализация LLM: gemini-2.0-flash-lite...")
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash-lite",
+        google_api_key=google_api_key,
+        temperature=0.1, # Минимальная температура для исключения "воды"
+        max_output_tokens=4000
     )
 
-    # 4. Setup RAG Chain
+    # 4. Настройка системного промпта (Твоя версия "Без воды")
     system_prompt = (
         "You are a Senior Data-Driven SEO Strategist. Your task is to analyze raw Markdown text scraped from TOP competitor websites and generate a highly specific, actionable SEO blueprint. "
         "CRITICAL CONSTRAINTS:\n"
-        "- NO FLUFF: Do not use introductory or concluding remarks (e.g., 'Here is your report', 'In conclusion'). Start strictly with the first heading.\n"
-        "- ZERO HALLUCINATIONS: Base your analysis STRICTLY on the provided context. If a metric, tool, or entity is not in the text, DO NOT invent it.\n"
-        "- EXTREME SPECIFICITY: Quote exact terms, LSI keywords, and unique features found in the competitor data. Never use generic placeholders like '[Brand Name]' or '[Industry Term]'.\n\n"
+        "- NO FLUFF: Do not use introductory or concluding remarks. Start strictly with the first heading.\n"
+        "- ZERO HALLUCINATIONS: Base your analysis STRICTLY on the provided context.\n"
+        "- EXTREME SPECIFICITY: Quote exact terms, LSI keywords, and unique features found in the competitor data.\n\n"
         "REPORT STRUCTURE (Use Markdown):\n\n"
-        "1. Executive Summary: Market Reality. Identify the exact content format winning the SERP (e.g., aggregator, calculator, deep-dive guide). What is the exact user intent being satisfied? Mention specific competitor names found in the text.\n\n"
-        "2. Content Architecture (The Blueprint): Propose a high-converting H1. Map out the exact H2-H3 hierarchy based on competitor consensus. Detail 2-3 highly specific, unique content blocks (with examples) that top leaders use to retain users.\n\n"
-        "3. Semantic Entity Map & LSI: Extract a hard list of mandatory entities, technical jargon, and relational LSI keywords explicitly present in the context. Group them logically (e.g., Core, Commercial, Trust).\n\n"
-        "4. Commercial & UX Conversion Stack: Identify specific E-E-A-T signals (e.g., specific licenses, author bios) and UX elements (e.g., dynamic tables, custom widgets) actively used by the scraped competitors.\n\n"
-        "5. Strategic Gap Analysis: Identify what critical information or UX feature is missing across these specific competitors. Provide 2 highly actionable, non-obvious recommendations to make our page 10% better.\n\n"
+        "1. Executive Summary: Market Reality. Identify exact content formats and competitor names.\n\n"
+        "2. Content Architecture (The Blueprint): Propose a high-converting H1. Map out exact H2-H3 hierarchy based on competitor consensus.\n\n"
+        "3. Semantic Entity Map & LSI: Extract hard list of mandatory entities explicitly present in the context.\n\n"
+        "4. Commercial & UX Conversion Stack: Identify specific E-E-A-T signals and UX elements found in the data.\n\n"
+        "5. Strategic Gap Analysis: Provide 2 highly actionable, non-obvious recommendations to outperform competitors.\n\n"
         "Context:\n"
         "{context}"
     )
 
-    # === Ручная сборка контекста с метаданными ===
-    print("🔍 Извлечение данных из Pinecone (MMR)...")
+    # 5. Сборка контекста из Pinecone (MMR поиск для разнообразия данных)
+    print("🔍 Поиск релевантных данных в Pinecone...")
+    retriever = vector_store.as_retriever(
+        search_type="mmr", 
+        search_kwargs={"k": 20, "fetch_k": 50}
+    )
     
-    retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 20, "fetch_k": 50})
-    search_query = "SEO structure, H1, H2, H3 headings, pricing, commercial factors, delivery, product features, reviews"
-    
+    search_query = "SEO structure, headings, pricing, commercial factors, trust signals, reviews, LSI keywords"
     docs = retriever.invoke(search_query)
     
-    print("🛠 Формирование обогащенного контекста...")
+    print(f"🛠 Обработка {len(docs)} фрагментов контекста...")
     formatted_context = ""
     for i, doc in enumerate(docs):
-        formatted_context += f"\n--- Фрагмент {i+1} ---\n"
-        
-        if "source" in doc.metadata:
-            formatted_context += f"Источник: {doc.metadata['source']}\n"
-        if "Header 1" in doc.metadata:
-            formatted_context += f"H1: {doc.metadata['Header 1']}\n"
-        if "Header 2" in doc.metadata:
-            formatted_context += f"H2: {doc.metadata['Header 2']}\n"
-        if "Header 3" in doc.metadata:
-            formatted_context += f"H3: {doc.metadata['Header 3']}\n"
-            
+        source = doc.metadata.get("source", "Unknown")
+        formatted_context += f"\n--- Фрагмент {i+1} (Источник: {source}) ---\n"
         formatted_context += f"Текст: {doc.page_content}\n"
 
-    print("🧠 Генерация SEO-отчета через LLM...")
+    # 6. Запуск генерации
+    print("✍️ Генерация финального отчета...")
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -97,24 +97,22 @@ def main():
     chain = prompt | llm
     
     try:
-        llm_task = "Analyze the competitor base and create a detailed expert report according to your instructions."
         response = chain.invoke({
             "context": formatted_context, 
-            "input": llm_task
+            "input": "Create a detailed expert SEO report based on the provided competitor context."
         })
         
+        # У Gemini ответ лежит в .content
         answer = response.content 
         
         os.makedirs("data", exist_ok=True)
         with open("data/raw_report.md", "w", encoding="utf-8") as f:
             f.write(answer)
-        print("Raw report saved to 'data/raw_report.md'.")
-        
-        print("\n=== RAW ANALYSIS RESULT ===\n")
-        print(answer)
+            
+        print("✅ Успех! Отчет сохранен в 'data/raw_report.md'.")
         
     except Exception as e:
-        print(f"Error during analysis: {e}")
+        print(f"❌ Ошибка при генерации: {e}")
 
 if __name__ == "__main__":
     main()
