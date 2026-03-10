@@ -32,7 +32,7 @@ def main():
     llm = ChatOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=openrouter_api_key,
-        model="nousresearch/hermes-3-llama-3.1-405b:free"
+        model="meta-llama/llama-3.2-3b-instruct:free"
     )
 
    # 4. Setup Translation Prompt
