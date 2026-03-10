@@ -30,14 +30,14 @@ def main():
     with open(raw_report_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
 
-    # 3. Инициализация нативного Gemini 2.0 Flash-Lite
+    # 3. Инициализация нативного Gemini 2.5
     # Используем ту же модель, что и в анализаторе для консистентности и скорости
     print("🧠 Инициализация Translator LLM: gemini-2.0-flash-lite...")
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=google_api_key,
         temperature=0.1, # Низкая температура для максимально точного перевода
-        max_output_tokens=4000
+        max_output_tokens=8196
     )
 
     # 4. Настройка промпта перевода
