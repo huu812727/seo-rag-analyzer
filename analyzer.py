@@ -1,10 +1,9 @@
-import streamlit as st
 import os
 import sys
 import io
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_pinecone import PineconeVectorStore # Исправленный импорт (уберет Warning)
+from langchain_pinecone import PineconeVectorStore
 from langchain_core.prompts import ChatPromptTemplate
 
 # 0. Fix encoding for Windows console
@@ -39,14 +38,15 @@ def main():
     )
 
     # 3. Initialize LLM (OpenRouter)
-    print("Initializing LLM via OpenRouter (Gemini 3 Flash Preview)...")
+    print("Initializing LLM via OpenRouter (Llama 3.3 70B)...")
     llm = ChatOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=openrouter_api_key,
-        model="meta-llama/llama-3.3-70b-instruct:free"
+        model="meta-llama/llama-3.3-70b-instruct:free",
+        max_tokens=4000
     )
 
-   # 4. Setup RAG Chain
+    # 4. Setup RAG Chain
     system_prompt = (
         "You are a Senior Data-Driven SEO Strategist. Your task is to analyze raw Markdown text scraped from TOP competitor websites and generate a highly specific, actionable SEO blueprint. "
         "CRITICAL CONSTRAINTS:\n"
@@ -89,17 +89,10 @@ def main():
 
     print("🧠 Генерация SEO-отчета через LLM...")
     
-    # ЭТОТ БЛОК АГЕНТ УДАЛИЛ, ЕГО НУЖНО ВЕРНУТЬ:
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
         ("human", "{input}")
     ])
-    
-    chain = prompt | llm
-    
-    try:
-        llm_task = "Analyze the competitor base and create a detailed expert report according to your instructions."
-
     
     chain = prompt | llm
     
