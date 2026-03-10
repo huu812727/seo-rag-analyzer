@@ -50,9 +50,6 @@ def validate_and_save(url, markdown_content, index, data_dir):
         print(f"URL [{url}] skipped: failed quality check (too short - likely a stub or error page)")
         return False
 
-    # 2. Проверка по стоп-словам ОТКЛЮЧЕНА, так как блокировала полезные сайты
-    # из-за упоминания слов 'captcha' или 'cloudflare' в политике конфиденциальности.
-    
     # Save to file
     filename = f"competitor_{index}.md"
     filepath = os.path.join(data_dir, filename)
@@ -99,8 +96,9 @@ def main():
         print(f"Scraping [{i}/{len(target_urls)}]: {url}...")
         
         try:
-           
-scrape_result = app.scrape(url, params={'formats': ['markdown'], 'onlyMainContent': True})
+            # === ИСПРАВЛЕННЫЙ БЛОК С ОТСТУПАМИ ===
+            # Scrape content as Markdown with noise filter
+            scrape_result = app.scrape(url, params={'formats': ['markdown'], 'onlyMainContent': True})
             markdown_content = getattr(scrape_result, 'markdown', None)
             
             if validate_and_save(url, markdown_content, i, data_dir):
