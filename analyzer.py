@@ -42,11 +42,11 @@ def main():
         embedding=embeddings
     )
 
-    # 3. Инициализация нативного Gemini 2.0 Flash-Lite
+    # 3. Инициализация нативного Gemini-3.1-flash-lite
     # Это самая актуальная и быстрая модель для RAG задач на сегодня
-    print("🧠 Инициализация LLM: gemini-2.5-flash...")
+    print("🧠 Инициализация LLM: gemini-3.1-flash-lite...")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-3.1-flash-lite",
         google_api_key=google_api_key,
         temperature=0.1, # Минимальная температура для исключения "воды"
         max_output_tokens=8192
