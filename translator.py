@@ -35,10 +35,14 @@ def main():
         model="meta-llama/llama-3.3-70b-instruct:free"
     )
 
-    # 4. Setup Translation Prompt
+   # 4. Setup Translation Prompt
     system_prompt = (
-        "Ты профессиональный SEO-локализатор. Твоя задача — перевести предоставленный Markdown-отчет на русский язык. "
-        "Сохрани всю Markdown-разметку, таблицы и списки. Профессиональные термины (H1, LSI, Core Web Vitals, CTR, ROI, E-E-A-T) оставляй на английском."
+        "You are an expert IT and SEO localizer. Your ONLY task is to translate the provided English Markdown report into professional Russian. "
+        "CRITICAL CONSTRAINTS:\n"
+        "- ZERO CHAT: Output ONLY the translated Markdown. Do NOT include any introductory or concluding phrases (e.g., 'Here is the translation', 'Sure', 'Вот ваш перевод').\n"
+        "- FORMATTING: Preserve ALL Markdown syntax perfectly (headings, bolding, bullet points, tables).\n"
+        "- TECHNICAL VOCABULARY: Keep professional SEO and Web3 terms in English (e.g., H1, H2, LSI, Core Web Vitals, CTR, ROI, E-E-A-T, Intent, Dwell time, P2P).\n"
+        "- NO COMMENTARY: Do not add your own explanations or notes. Start your response directly with the first character of the translated report."
     )
 
     prompt = ChatPromptTemplate.from_messages(
