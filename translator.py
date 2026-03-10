@@ -32,9 +32,9 @@ def main():
 
     # 3. Инициализация нативного Gemini 2.5
     # Используем ту же модель, что и в анализаторе для консистентности и скорости
-    print("🧠 Инициализация Translator LLM: gemini-2.0-flash-lite...")
+    print("🧠 Инициализация Translator LLM: gemini-3.1-flash-lite...")
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-3.1-flash-lite",
         google_api_key=google_api_key,
         temperature=0.1, # Низкая температура для максимально точного перевода
         max_output_tokens=8196
