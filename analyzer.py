@@ -32,7 +32,7 @@ def main():
     # 2. Инициализация LLM (Gemini 3.1 Flash Lite)
     # Используем ID, который точно должен быть в v1beta
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-lite-preview-02-05", 
+        model="gemini-3.1-flash-lite-preview", 
         google_api_key=google_api_key,
         temperature=0.1,
         max_output_tokens=8192
