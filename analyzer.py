@@ -77,19 +77,34 @@ def main():
     
     chain = prompt | llm
     
-    try:
+   try:
         response = chain.invoke({"query": args.query, "context": formatted_context})
-        if not response.content:
+        
+        # --- БРОНЕБОЙНЫЙ ИЗВЛЕКАТЕЛЬ ТЕКСТА ---
+        answer = response.content
+        
+        # Если Gemini вернула список, собираем его в одну строку
+        if isinstance(answer, list):
+            text_parts = []
+            for item in answer:
+                if isinstance(item, dict) and "text" in item:
+                    text_parts.append(item["text"])
+                else:
+                    text_parts.append(str(item))
+            answer = "".join(text_parts)
+        else:
+            # Если это уже строка, просто страхуемся
+            answer = str(answer)
+
+        if not answer.strip():
             print("❌ ОШИБКА: Модель вернула пустой ответ!")
             return
 
         os.makedirs("data", exist_ok=True)
         with open("data/raw_report.md", "w", encoding="utf-8") as f:
-            f.write(response.content)
+            f.write(answer) # Теперь сюда 100% попадет текст
+            
         print("✅ Отчет успешно сохранен.")
         
     except Exception as e:
         print(f"❌ Ошибка LLM: {e}")
-
-if __name__ == "__main__":
-    main()
