@@ -1,3 +1,4 @@
+import streamlit as st
 import os
 import sys
 import io
@@ -87,6 +88,18 @@ def main():
         formatted_context += f"Текст: {doc.page_content}\n"
 
     print("🧠 Генерация SEO-отчета через LLM...")
+    
+    # ЭТОТ БЛОК АГЕНТ УДАЛИЛ, ЕГО НУЖНО ВЕРНУТЬ:
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{input}")
+    ])
+    
+    chain = prompt | llm
+    
+    try:
+        llm_task = "Analyze the competitor base and create a detailed expert report according to your instructions."
+
     
     chain = prompt | llm
     
