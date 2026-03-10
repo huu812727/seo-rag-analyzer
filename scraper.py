@@ -99,8 +99,8 @@ def main():
         print(f"Scraping [{i}/{len(target_urls)}]: {url}...")
         
         try:
-            # Scrape content as Markdown
-            scrape_result = app.scrape(url, formats=['markdown'])
+           
+scrape_result = app.scrape(url, params={'formats': ['markdown'], 'onlyMainContent': True})
             markdown_content = getattr(scrape_result, 'markdown', None)
             
             if validate_and_save(url, markdown_content, i, data_dir):
